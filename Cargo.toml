@@ -1,0 +1,14 @@
+[package]
+name = "varion"
+version = "0.0.1"
+edition = "2021"
+authors = ["KimKyuRae <mootomgame@gmail.com>"]
+description = "텍스트 기반 DSL로 구성된 대화 시스템 파싱 라이브러리"
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/KimKyuRae/varion-rust"
+keywords = ["dsl", "dialogue", "game", "text"]
+categories = ["text-processing", "game-development"]
+documentation = "https://docs.rs/varion"
+
+[dependencies]
