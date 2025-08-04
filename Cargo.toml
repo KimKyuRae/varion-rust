@@ -1,6 +1,6 @@
 [package]
 name = "varion"
-version = "0.0.1"
+version = "0.0.2"
 edition = "2021"
 authors = ["KimKyuRae <mootomgame@gmail.com>"]
 description = "텍스트 기반 DSL로 구성된 대화 시스템 파싱 라이브러리"

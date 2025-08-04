@@ -20,6 +20,7 @@ pub struct Node {
     pub name: String,
     pub meta: HashMap<String, String>,
     pub actions: Vec<Action>,
+    pub tags: Vec<String>,
     pub body: String,
     pub choices: Vec<Choice>,
 }
@@ -63,7 +64,7 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
         let trimmed_line = line.trim();
         let line_err = |msg: &str| format!("Error on line {}: {}", line_num + 1, msg);
 
-        if trimmed_line.is_empty() {
+        if trimmed_line.is_empty() || trimmed_line.starts_with("//") {
             continue;
         }
 
@@ -85,6 +86,7 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
                 name: node_name,
                 meta: HashMap::new(),
                 actions: Vec::new(),
+                tags: Vec::new(),
                 body: String::new(),
                 choices: Vec::new(),
             });
@@ -118,6 +120,19 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
                         trimmed_line
                     )));
                 }
+            } else if trimmed_line.starts_with('#') {
+                node.tags.extend(
+                    trimmed_line
+                        .split_whitespace()
+                        .filter_map(|s| {
+                            let tag = s.strip_prefix('#').unwrap_or(s);
+                            if tag.is_empty() {
+                                None
+                            } else {
+                                Some(tag.to_string())
+                            }
+                        })
+                );
             } else if let Some(choice_line) = trimmed_line.strip_prefix('*') {
                 let parts: Vec<&str> = choice_line.split("=>").map(|s| s.trim()).collect();
                 if parts.len() != 2 {
@@ -184,7 +199,7 @@ mod tests {
 
     #[test]
     fn test_parse_simple_node() {
-        let script = r#"
+        let script = r#" 
 ::start
 @who: NPC
 Hello, world!
@@ -204,7 +219,7 @@ Hello, world!
 
     #[test]
     fn test_parse_full_example() {
-        let script = r#"
+        let script = r#" 
 ::start
 @background: images/bg.png
 @who: NPC
@@ -248,7 +263,7 @@ Really? I would be grateful for your help!
 
     #[test]
     fn test_parse_multiline_body() {
-        let script = r#"
+        let script = r#" 
 ::multiline
 This is the first line.
     This is the second line, with indentation.
@@ -263,6 +278,22 @@ This is the first line.
     fn test_no_node_error() {
         let script = "Just some text without a node.";
         assert!(parse(script).is_err());
+    }
+
+    #[test]
+    fn test_parse_tags_and_comments() {
+        let script = r#" 
+// This is a comment
+::start
+#tag1 #tag2
+// Another comment
+Hello
+# another_tag
+* choice => next
+        "#;
+        let dialogue = parse(script).unwrap();
+        let node = dialogue.nodes.get("start").unwrap();
+        assert_eq!(node.tags, vec!["tag1", "tag2", "another_tag"]);
     }
 
     #[test]

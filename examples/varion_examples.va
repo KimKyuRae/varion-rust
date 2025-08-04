@@ -1,6 +1,17 @@
-::start_example
-Hello from varion_examples.va!
-* To the end => end_example
+::start
+Welcome to the long example.
+* Offer help => offer_help
+* Ask for reward => ask_for_reward
 
-::end_example
-This is the end.
+::offer_help
+@action: set helped = true
+You offer to help.
+
+::ask_for_reward
+You ask for a reward.
+* Demand more => ask_for_reward
+* Threaten => ask_for_reward
+* Leave => end_final
+
+::end_final
+The end.
