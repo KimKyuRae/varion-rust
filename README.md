@@ -8,7 +8,7 @@ Varion은 텍스트 기반 DSL로 구성된 대화 시스템을 파싱하기 위
 
 ```toml
 [dependencies]
-varion = "0.0.1"
+varion = "0.0.3"
 ```
 
 ## 라이선스

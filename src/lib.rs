@@ -19,6 +19,7 @@ pub struct Action {
 pub struct Node {
     pub name: String,
     pub meta: HashMap<String, String>,
+    pub next: Option<String>,
     pub actions: Vec<Action>,
     pub tags: Vec<String>,
     pub body: String,
@@ -85,6 +86,7 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
             current_node = Some(Node {
                 name: node_name,
                 meta: HashMap::new(),
+                next: None,
                 actions: Vec::new(),
                 tags: Vec::new(),
                 body: String::new(),
@@ -110,6 +112,14 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
                     node.actions.push(Action {
                         command: action_str.trim().to_string(),
                     });
+                } else if let Some(next_str) = meta_line.strip_prefix("next:") {
+                    if node.next.is_some() {
+                        return Err(line_err("Duplicate @next directive found."));
+                    }
+                    if !node.choices.is_empty() {
+                        return Err(line_err("@next cannot be used in a node that already has choices."));
+                    }
+                    node.next = Some(next_str.trim().to_string());
                 } else if let Some(colon_index) = meta_line.find(':') {
                     let key = meta_line[..colon_index].trim().to_string();
                     let value = meta_line[colon_index + 1..].trim().to_string();
@@ -134,6 +144,9 @@ pub fn parse(script: &str) -> Result<Dialogue, String> {
                         })
                 );
             } else if let Some(choice_line) = trimmed_line.strip_prefix('*') {
+                if node.next.is_some() {
+                    return Err(line_err("Choices cannot be added to a node that has a @next directive."));
+                }
                 let parts: Vec<&str> = choice_line.split("=>").map(|s| s.trim()).collect();
                 if parts.len() != 2 {
                     return Err(line_err(&format!("Invalid choice format: {}", choice_line)));
@@ -303,9 +316,11 @@ Hello
         let result = parse(&script);
         assert!(result.is_ok(), "Parsing failed with: {:?}", result.err());
         let dialogue = result.unwrap();
-        assert_eq!(dialogue.nodes.len(), 2);
-        assert!(dialogue.nodes.contains_key("start_example"));
-        assert!(dialogue.nodes.contains_key("end_example"));
+        assert_eq!(dialogue.nodes.len(), 4);
+        assert!(dialogue.nodes.contains_key("start"));
+        assert!(dialogue.nodes.contains_key("offer_help"));
+        assert!(dialogue.nodes.contains_key("ask_for_reward"));
+        assert!(dialogue.nodes.contains_key("end_final"));
     }
 
     #[test]
@@ -322,5 +337,42 @@ Hello
         assert_eq!(ask_for_reward_node.choices.len(), 3);
         let offer_help_node = dialogue.nodes.get("offer_help").unwrap();
         assert_eq!(offer_help_node.actions.len(), 1);
+    }
+
+    #[test]
+    fn test_parse_next_directive() {
+        let script = r#" 
+::start
+This is the first node.
+@next: second_node
+
+::second_node
+This is the second node.
+* Go to end => end_node
+        "#;
+        let dialogue = parse(script).unwrap();
+        let start_node = dialogue.nodes.get("start").unwrap();
+        assert_eq!(start_node.next, Some("second_node".to_string()));
+        assert!(start_node.choices.is_empty());
+    }
+
+    #[test]
+    fn test_error_on_next_with_choices() {
+        let script = r#" 
+::start
+@next: some_node
+* A choice => another_node
+        "#;
+        assert!(parse(script).is_err());
+    }
+
+    #[test]
+    fn test_error_on_choices_with_next() {
+        let script = r#" 
+::start
+* A choice => another_node
+@next: some_node
+        "#;
+        assert!(parse(script).is_err());
     }
 }

@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.0.3] - 2025-08-05
+
+### Added
+- `@next` 지시어 추가: 선택지 없이 다음 노드를 지정하는 기능
+
+### Changed
+- 파서가 `@next` 지시어를 처리하도록 업데이트
+- `@next`와 선택지가 동시에 사용될 경우 에러를 발생시키도록 파서 로직 수정
 
 ## [0.0.2] - 2025-08-04
 
